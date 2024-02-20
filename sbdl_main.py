@@ -50,9 +50,23 @@ if __name__ == "__main__":
     kafka_kv_df = final_df.select(col("payload.contractIdentifier").alias("key"),
                                   to_json(struct("*")).alias("value"))
     input("Press Any Key")
-    
+    # kafka_kv_df.write.format("noop").mode("overwrite").save("test_data\noop")
 
+    # Keep it in vault or other secure place, authorize application to extract it from there
+    api_key = conf["kafka.api_key"]
+    api_secret = conf["kafka.api_secret"]
 
+    kafka_kv_df.write \
+        .format("kafka") \
+        .option("kafka.bootstrap.servers", conf["kafka.bootstrap.servers"]) \
+        .option("topic", conf["kafka.topic"]) \
+        .option("kafka.security.protocol", conf["kafka.security.protocol"]) \
+        .option("kafka.sasl.jaas.config", conf["kafka.sasl.jaas.config"].format(api_key, api_secret)) \
+        .option("kafka.sasl.mechanism", conf["kafka.sasl.mechanism"]) \
+        .option("kafka.client.dns.lookup", conf["kafka.client.dns.lookup"]) \
+        .save()
+
+    logger.info("Finished sending data to Kafka")
 
     logger.info("Finished creating Spark Session")
     logger.info("One more message")
