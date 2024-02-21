@@ -13,12 +13,13 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     job_run_env = sys.argv[1].upper()
+    # print(job_run_env)
     load_date = sys.argv[2]
     job_run_id = "SBDL-" + str(uuid.uuid4())
 
     print("Initializing SBDL Job in " + job_run_env + " Job ID: " + job_run_id)
     conf = configLoader.get_config(job_run_env)
-    enable_hive = True if conf["enable_hive"] == 'true' else False
+    enable_hive = True if conf["enable.hive"] == 'true' else False
     hive_db = conf['hive.database']
 
     print("Creating Spark Session")
@@ -46,10 +47,14 @@ if __name__ == "__main__":
 
     logger.info("Apply Header and create Event")
     final_df = Transformations.apply_header(spark, data_df)
-    logger.info("Preparing to send data top Kafka")
-    kafka_kv_df = final_df.select(col("payload.contractIdentifier").alias("key"),
+
+    # print(final_df.printSchema())
+
+    logger.info("Preparing to send data to Kafka")
+    kafka_kv_df = final_df.select(col("payload.contractIdentifier").cast('string').alias("key"),
                                   to_json(struct("*")).alias("value"))
-    input("Press Any Key")
+    # input("Press Any Key")
+
     # kafka_kv_df.write.format("noop").mode("overwrite").save("test_data\noop")
 
     # Keep it in vault or other secure place, authorize application to extract it from there
@@ -69,4 +74,4 @@ if __name__ == "__main__":
     logger.info("Finished sending data to Kafka")
 
     logger.info("Finished creating Spark Session")
-    logger.info("One more message")
+    # logger.info("One more message")
